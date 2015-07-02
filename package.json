@@ -1,0 +1,27 @@
+{
+  "name": "myfitnesspal-scraper",
+  "version": "1.0.0",
+  "description": "Scrape food from Myfitnesspal",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhtrieu87/Engineering-Challenge-Backend.git"
+  },
+  "keywords": [
+    "scraper",
+    "sailsjs"
+  ],
+  "author": "Le Hong Trieu <lhtrieu87@gmail.com> (https://github.com/lhtrieu87)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lhtrieu87/Engineering-Challenge-Backend/issues"
+  },
+  "homepage": "https://github.com/lhtrieu87/Engineering-Challenge-Backend#readme",
+  "dependencies": {
+    "underscore": "^1.8.3",
+    "x-ray": "^2.0.1"
+  }
+}
