@@ -12,7 +12,9 @@ var db = mongojs(dbUrl, collections);
 
 // Enable full text search on 'name' field
 db.foodItems.createIndex({
-  name: "text"
+  name: 'text'
+}, {
+  unique: true
 });
 
 console.log('Please be patient...');
@@ -76,6 +78,20 @@ var insertFoodItemIntoDb = function(foodItem) {
   });
 };
 
+var getUniqueFoodCount = function() {
+  return _(function(push) {
+    var cb = function(err, x) {
+      if (err) {
+        push(err);
+      } else {
+        push(null, x);
+      }
+      push(null, _.nil);
+    };
+    db.foodItems.runCommand('count', cb);
+  });
+};
+
 var scrapedItemCount = 0;
 x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
   if (!error) {
@@ -103,7 +119,10 @@ x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
         process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
       })
       .done(function() {
-        db.close();
+        getUniqueFoodCount().apply(function(res) {
+          console.log('\nThe number of UNIQUE scraped food items is ' + res.n);
+          db.close();
+        });
       });
   } else {
     console.log(error);
