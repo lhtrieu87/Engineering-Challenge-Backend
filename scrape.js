@@ -10,6 +10,11 @@ var dbUrl = 'myfitnesspal';
 var collections = ['foodItems'];
 var db = mongojs(dbUrl, collections);
 
+// Enable full text search on 'name' field
+db.foodItems.createIndex({
+  name: "text"
+});
+
 console.log('Please be patient...');
 var popularTagsUrl = 'http://www.myfitnesspal.com/food/calorie-chart-nutrition-facts';
 
