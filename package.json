@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/lhtrieu87/Engineering-Challenge-Backend#readme",
   "dependencies": {
-    "underscore": "^1.8.3",
+    "highland": "^2.5.1",
     "x-ray": "^2.0.1"
   }
 }

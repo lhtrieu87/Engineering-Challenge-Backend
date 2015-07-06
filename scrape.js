@@ -3,56 +3,41 @@
 var Xray = require('x-ray');
 var x = new Xray();
 
-var _ = require('underscore');
+var _ = require('highland');
 
-var scrapedItemCount = 0;
+console.log('Please be patient...');
+var popularTagsUrl = 'http://www.myfitnesspal.com/food/calorie-chart-nutrition-facts';
 
-// For each popular tag T, we scrape the list of food items tagged by T. 
-function goToFoodListPagesByTags(error, tags) {
-  if(!error) {
-    console.log('Scraped popular tags... Travelling to the lists of food items using tags...');
-    _.each(tags, function (tagUrl) {
-      x(tagUrl, '#new_food_list li', [{
-        url: x('.food_description', 'a@href'),
-      }])(goToFoodItemDetailsPages);
-    });
-  } else {
-    console.log(error);
-  }
-}
+// tagUrl -> a readable stream, which retrieves the list of food items under the tag
+var visitTagUrl = function (tagUrl) {
+  var readable = x(tagUrl, '#new_food_list li', [
+    '.food_description a@href'
+  ]).write();
+  return _(readable);
+};
 
-// For each item in the list, we travel to food detail page and scrape the details.
-function goToFoodItemDetailsPages(error, items) {
-  if(!error) {
-    _.each(items, function (item) {
-      x(item.url, '#main', {
-        name: '.food-description',
-        company: '#other-info .col-1 .secondary-title',
-        nutritionalTable: {
-          keys: ['td.col-1'],
-          values: ['td.col-2'],
-        }
-      })(function (error, foodItem) {
-        foodItem = transformData(cleanData(foodItem));
-        // console.log(foodItem);
-        ++scrapedItemCount;
-        process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
-      });
-    });
-  } else {
-    console.log(error);
-  }
-}
+var onlyFoodDetailsUrl = function (url) {
+  return url.indexOf('/food/calories/') >= 0;
+};
 
-// Remove trash data from the scraped food item
-function cleanData(foodItem) {
+var visitFoodDetailsUrl = function (foodUrl) {
+  var readable = x(foodUrl, '#main', {
+    name: '.food-description',
+    company: '#other-info .col-1 .secondary-title',
+    nutritionalTable: {
+      keys: ['td.col-1'],
+      values: ['td.col-2'],
+    }
+  }).write();
+  return _(readable);
+};
+
+var transformFoodData = function (foodItem) {
+  foodItem = JSON.parse(foodItem);
+
   if(foodItem.company)
     foodItem.company = foodItem.company.replace('More from ', '').trim();
-  return foodItem;
-}
 
-// Transform scraped data into cleaner format
-function transformData(foodItem) {
   var keys = foodItem.nutritionalTable.keys;
   var values = foodItem.nutritionalTable.values;
 
@@ -64,8 +49,33 @@ function transformData(foodItem) {
   delete foodItem.nutritionalTable.values;
 
   return foodItem;
+};
+
+var scrapedItemCount = 0;
+var insertDb = function (foodItem) {
+  ++scrapedItemCount;
+  process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
 }
 
-console.log('Please be patient...');
-var popularTagsUrl = 'http://www.myfitnesspal.com/food/calorie-chart-nutrition-facts';
-x(popularTagsUrl, '#popular_tags li', ['a@href'])(goToFoodListPagesByTags);
+x(popularTagsUrl, '#popular_tags li', ['a@href'])(function (error, tagUrls) {
+  if(!error) {
+    _(tagUrls)
+      .ratelimit(100, 100)
+      .map(visitTagUrl)
+      .parallel(200)
+      .map(JSON.parse)
+      .reduce1(_.concat)
+      .flatten()
+      .filter(onlyFoodDetailsUrl)
+      .ratelimit(100, 100)
+      .map(visitFoodDetailsUrl)
+      .parallel(1000)
+      .map(transformFoodData)
+      .tap(insertDb)
+      .done(function () {
+        console.log('\nDone!');
+      });
+  } else {
+    console.log(error);
+  }
+});
