@@ -5,6 +5,11 @@ var x = new Xray();
 
 var _ = require('highland');
 
+var mongojs = require('mongojs');
+var dbUrl = 'myfitnesspal';
+var collections = ['foodItems'];
+var db = mongojs(dbUrl, collections);
+
 console.log('Please be patient...');
 var popularTagsUrl = 'http://www.myfitnesspal.com/food/calorie-chart-nutrition-facts';
 
@@ -51,12 +56,21 @@ var transformFoodData = function(foodItem) {
   return foodItem;
 };
 
-var scrapedItemCount = 0;
-var insertDb = function(foodItem) {
-  ++scrapedItemCount;
-  console.log("Scraped " + scrapedItemCount + " food items...");
-}
+var insertFoodItemIntoDb = function(foodItem) {
+  return _(function(push) {
+    var cb = function(err, x) {
+      if (err) {
+        push(err);
+      } else {
+        push(null, x);
+      }
+      push(null, _.nil);
+    };
+    db.foodItems.insert(foodItem, cb);
+  });
+};
 
+var scrapedItemCount = 0;
 x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
   if (!error) {
     _(tagUrls)
@@ -71,9 +85,19 @@ x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
       .map(visitFoodDetailsUrl)
       .parallel(1000)
       .map(transformFoodData)
-      .tap(insertDb)
+      .map(insertFoodItemIntoDb)
+      // Control the maximum number of db connections
+      .parallel(10)
+      // Remove errors from the stream and continue with remaining data
+      .errors(function(error) {
+        console.error('Error!!!', error.stack);
+      })
+      .each(function() {
+        ++scrapedItemCount;
+        process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
+      })
       .done(function() {
-        console.log('Done!');
+        db.close();
       });
   } else {
     console.log(error);

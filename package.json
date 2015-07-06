@@ -22,6 +22,7 @@
   "homepage": "https://github.com/lhtrieu87/Engineering-Challenge-Backend#readme",
   "dependencies": {
     "highland": "^2.5.1",
+    "mongojs": "^1.0.2",
     "x-ray": "^2.0.1"
   }
 }
