@@ -47,7 +47,8 @@ var transformFoodData = function(foodItem) {
   var values = foodItem.nutritionalTable.values;
 
   for (var i = 0; i < keys.length; i++) {
-    foodItem.nutritionalTable[keys[i]] = values[i];
+    if (keys[i].trim() != '')
+      foodItem.nutritionalTable[keys[i]] = values[i];
   }
 
   delete foodItem.nutritionalTable.keys;
@@ -92,7 +93,7 @@ x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
       .errors(function(error) {
         console.error('Error!!!', error.stack);
       })
-      .each(function() {
+      .each(function(food) {
         ++scrapedItemCount;
         process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
       })
