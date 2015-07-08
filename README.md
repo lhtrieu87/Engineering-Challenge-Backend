@@ -2,6 +2,8 @@
 
 #### Pre-conditions:
 * mongodb is installed and run at localhost:27017 (default port)
+* npm install sails -g
+* npm install
 
 #### Commands:
 Scrape myfitnesspal's foods and store them in a database
