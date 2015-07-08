@@ -6,6 +6,7 @@
  */
 
 var _ = require('highland');
+var ObjectID = require('sails-mongo/node_modules/mongodb').ObjectID;
 
 module.exports = {
   /**
@@ -18,7 +19,7 @@ module.exports = {
     // Use native mongo query for full text search
     FoodItem.native(function (error, collection) {
       if(error) {
-        return res.json(error);
+        return res.status(500).json(error);
       }
 
       _(collection.find({
@@ -44,11 +45,35 @@ module.exports = {
         })
         .toArray(function (error, list) {
           if(error) {
-            return res.json(error);
+            return res.status(500).json(error);
           }
 
           return res.json(list);
         });
     });
-  }
+  },
+
+  get: function (req, res) {
+    if(!ObjectID.isValid(req.params.id)) {
+      return res.status(400).json({
+          error: 'Malformed id'
+        });
+    }
+
+    FoodItem.findOne().where({
+      id: req.params.id
+    }).exec(function (error, item) {
+      if(error) {
+        return res.status(500).json(error);
+      }
+
+      if(!item) {
+        return res.status(404).json({
+          error: 'Not found'
+        });
+      }
+
+      return res.json(item);
+    });
+  },
 };
