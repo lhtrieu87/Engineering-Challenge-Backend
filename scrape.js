@@ -7,11 +7,11 @@ var _ = require('highland');
 
 var mongojs = require('mongojs');
 var dbUrl = 'myfitnesspal';
-var collections = ['foodItems'];
+var collections = ['fooditem'];
 var db = mongojs(dbUrl, collections);
 
 // Enable full text search on 'name' field
-db.foodItems.createIndex({
+db.fooditem.createIndex({
   name: 'text'
 }, {
   unique: true
@@ -21,18 +21,18 @@ console.log('Please be patient...');
 var popularTagsUrl = 'http://www.myfitnesspal.com/food/calorie-chart-nutrition-facts';
 
 // tagUrl -> a readable stream, which retrieves the list of food items under the tag
-var visitTagUrl = function(tagUrl) {
+var visitTagUrl = function (tagUrl) {
   var readable = x(tagUrl, '#new_food_list li', [
     '.food_description a@href'
   ]).write();
   return _(readable);
 };
 
-var onlyFoodDetailsUrl = function(url) {
+var onlyFoodDetailsUrl = function (url) {
   return url.indexOf('/food/calories/') >= 0;
 };
 
-var visitFoodDetailsUrl = function(foodUrl) {
+var visitFoodDetailsUrl = function (foodUrl) {
   var readable = x(foodUrl, '#main', {
     name: '.food-description',
     company: '#other-info .col-1 .secondary-title',
@@ -44,17 +44,17 @@ var visitFoodDetailsUrl = function(foodUrl) {
   return _(readable);
 };
 
-var transformFoodData = function(foodItem) {
+var transformFoodData = function (foodItem) {
   foodItem = JSON.parse(foodItem);
 
-  if (foodItem.company)
+  if(foodItem.company)
     foodItem.company = foodItem.company.replace('More from ', '').trim();
 
   var keys = foodItem.nutritionalTable.keys;
   var values = foodItem.nutritionalTable.values;
 
-  for (var i = 0; i < keys.length; i++) {
-    if (keys[i].trim() != '')
+  for(var i = 0; i < keys.length; i++) {
+    if(keys[i].trim() != '')
       foodItem.nutritionalTable[keys[i]] = values[i];
   }
 
@@ -64,37 +64,37 @@ var transformFoodData = function(foodItem) {
   return foodItem;
 };
 
-var insertFoodItemIntoDb = function(foodItem) {
-  return _(function(push) {
-    var cb = function(err, x) {
-      if (err) {
+var insertFoodItemIntoDb = function (foodItem) {
+  return _(function (push) {
+    var cb = function (err, x) {
+      if(err) {
         push(err);
       } else {
         push(null, x);
       }
       push(null, _.nil);
     };
-    db.foodItems.insert(foodItem, cb);
+    db.fooditem.insert(foodItem, cb);
   });
 };
 
-var getUniqueFoodCount = function() {
-  return _(function(push) {
-    var cb = function(err, x) {
-      if (err) {
+var getUniqueFoodCount = function () {
+  return _(function (push) {
+    var cb = function (err, x) {
+      if(err) {
         push(err);
       } else {
         push(null, x);
       }
       push(null, _.nil);
     };
-    db.foodItems.runCommand('count', cb);
+    db.fooditem.runCommand('count', cb);
   });
 };
 
 var scrapedItemCount = 0;
-x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
-  if (!error) {
+x(popularTagsUrl, '#popular_tags li', ['a@href'])(function (error, tagUrls) {
+  if(!error) {
     _(tagUrls)
       .ratelimit(100, 100)
       .map(visitTagUrl)
@@ -111,15 +111,15 @@ x(popularTagsUrl, '#popular_tags li', ['a@href'])(function(error, tagUrls) {
       // Control the maximum number of db connections
       .parallel(10)
       // Remove errors from the stream and continue with remaining data
-      .errors(function(error) {
+      .errors(function (error) {
         console.error('Error!!!', error.stack);
       })
-      .each(function(food) {
+      .each(function (food) {
         ++scrapedItemCount;
         process.stdout.write("Scraped " + scrapedItemCount + " food items...\r");
       })
-      .done(function() {
-        getUniqueFoodCount().apply(function(res) {
+      .done(function () {
+        getUniqueFoodCount().apply(function (res) {
           console.log('\nThe number of UNIQUE scraped food items is ' + res.n);
           db.close();
         });
