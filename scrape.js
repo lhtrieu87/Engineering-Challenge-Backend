@@ -50,6 +50,7 @@ var visitFoodDetailsUrl = function (foodUrl) {
   return _(readable);
 };
 
+// Transform scraped data into a preferred format
 var transformFoodData = function (foodItem) {
   foodItem = JSON.parse(foodItem);
 
