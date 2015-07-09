@@ -33,7 +33,8 @@ module.exports.routes = {
   ***************************************************************************/
 
   'GET /fooditems/search': 'FoodItemController.search',
-  'GET /fooditems/:id': 'FoodItemController.get'
+  'GET /fooditems/:id': 'FoodItemController.get',
+  'POST /fooditems': 'FoodItemController.create',
   /***************************************************************************
   *                                                                          *
   * Custom routes here...                                                    *

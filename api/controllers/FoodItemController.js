@@ -56,8 +56,8 @@ module.exports = {
   get: function (req, res) {
     if(!ObjectID.isValid(req.params.id)) {
       return res.status(400).json({
-          error: 'Malformed id'
-        });
+        error: 'Malformed id'
+      });
     }
 
     FoodItem.findOne().where({
@@ -76,4 +76,16 @@ module.exports = {
       return res.json(item);
     });
   },
+
+  create: function (req, res) {
+    var foodItemData = req.body;
+
+    FoodItem.create(foodItemData).exec(function (error, item) {
+      if(error) {
+        return res.status(500).json(error);
+      }
+
+      return res.json(item);
+    });
+  }
 };

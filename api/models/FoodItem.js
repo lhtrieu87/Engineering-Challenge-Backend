@@ -1,19 +1,26 @@
 /**
-* FoodItem.js
-*
-* @description :: TODO: You might write a short summary of how this model works and what it represents here.
-* @docs        :: http://sailsjs.org/#!documentation/models
-*/
+ * FoodItem.js
+ *
+ * @description :: TODO: You might write a short summary of how this model works and what it represents here.
+ * @docs        :: http://sailsjs.org/#!documentation/models
+ */
 
 module.exports = {
 
   attributes: {
 
-    name : { type: 'string' },
+    name: {
+      type: 'string',
+      required: true,
+    },
 
-    company : { type: 'string' },
+    company: {
+      type: 'string'
+    },
 
-    nutritionalTable : { type: 'json' }
-  }
+    nutritionalTable: {
+      type: 'json',
+      required: true,
+    }
+  },
 };
-

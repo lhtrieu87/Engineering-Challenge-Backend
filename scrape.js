@@ -13,6 +13,12 @@ var db = mongojs(dbUrl, collections);
 // Enable full text search on 'name' field
 db.fooditem.createIndex({
   name: 'text'
+});
+
+db.fooditem.createIndex({
+  name: 1,
+  company: 1,
+  nutritionalTable: 1
 }, {
   unique: true
 });
